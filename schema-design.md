@@ -20,3 +20,15 @@
 - status: INT (0 = Scheduled, 1 = Completed, 2 = Cancelled)
 ### Table: Administrators
 - id: INT, primary key, auto increment, NOT NULL
+
+## MongoDB Collection Design
+### Collection: Prescriptions
+'''json
+{
+  "_id": "ObjectId('64abc123456')",
+  "patientName": "John Smith",
+  "appointmentId": 51,
+  "medication": "Paracetamol",
+  "dosage": "500mg",
+  "doctorNotes": "Take 1 tablet every 6 hours.",
+}
