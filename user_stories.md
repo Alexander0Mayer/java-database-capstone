@@ -10,3 +10,15 @@ Doctor User Stories:
 D1 As a doctor I want to access the patient files so that I can prepare for appointments.
 D2 As a doctor I want to access the presciptions handed out to a patient so that I can keep track of their medical history.
 D3 As a doctor I want to have a schedule of upcoming appointments with patients so that I can prepare for these.
+
+    # User Story Template
+    **Title:**
+    _As a [user role], I want [feature/goal], so that [reason]._
+    **Acceptance Criteria:**
+    1. [Criteria 1]
+    2. [Criteria 2]
+    3. [Criteria 3]
+    **Priority:** [High/Medium/Low]
+    **Story Points:** [Estimated Effort in Points]
+    **Notes:**
+    - [Additional information or edge cases]
