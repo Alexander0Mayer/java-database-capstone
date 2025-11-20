@@ -1,6 +1,9 @@
 ## MySQL Database Design
 ### Table: Doctors
 - id: INT, primary key, auto increment, NOT NULL
+- name: String, NOT NULL
+- username: String, NOT NULL
+- password: String, NOT NULL
 - clinic_id: INT, foreign key -> clinics(id) (one-to-one), NOT NULL
 - appointment_id: INT, foreign key (one-to-many)
 - availability: DATETIME
@@ -10,6 +13,9 @@
 - clinic_adress: String, NOT NULL
 ### Table: Patients
 - id: INT, primary key, auto increment, NOT NULL
+- name: String, NOT NULL
+- username: String, NOT NULL
+- password: String, NOT NULL
 - patient_adress: String, NOT NULL
 - appointment_id: INT, foreign key -> appointments(id) (many-to-one)
 ### Table: Appointments
@@ -20,6 +26,9 @@
 - status: INT (0 = Scheduled, 1 = Completed, 2 = Cancelled)
 ### Table: Administrators
 - id: INT, primary key, auto increment, NOT NULL
+- name: String, NOT NULL
+- username: String, NOT NULL
+- password: String, NOT NULL
 
 ## MongoDB Collection Design
 ### Collection: Prescriptions
