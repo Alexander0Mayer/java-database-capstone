@@ -1,4 +1,56 @@
 /* This is the style sheet for the doctorDashboard.html */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+    height: 100%;
+    font-family: 'Roboto', sans-serif;
+}
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+h2 {
+    font-size: 36px;
+    font-weight: bold;
+    margin-bottom: 50px;
+    color: #003e3e;
+}
+.main-content {
+    flex-grow: 1;
+    padding: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+    background-image: url('/assets/images/doctorBackground.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+button {
+    background-color: #015c5d;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    margin-top: 20px;
+    width: 200px;
+    cursor: pointer;
+    font-size: 16px;
+}
+button:hover {
+    background-color: #003e3e;
+}
+.dashboard-btn {
+    background-color: #015c5d;
+}
+.dashboard-btn:hover {
+    background-color: #003e3e;
+}
+
 /* 
 **Table Header (`.table-header`)**
 
