@@ -1,3 +1,107 @@
+import { openModal } from '../utils/modal.js';
+import { BASE_API_URL } from '../config/config.js';
+const ADMIN_API = `${BASE_API_URL}/admin/login`;
+const DOCTOR_API = `${BASE_API_URL}/doctor/login`;
+window.onload = function() {
+  const adminLoginBtn = document.getElementById('adminLogin');
+  const doctorLoginBtn = document.getElementById('doctorLogin');
+  if (adminLoginBtn) {
+    adminLoginBtn.addEventListener('click', () => {
+      openModal('adminLogin');
+    });
+  }
+  if (doctorLoginBtn) {
+    doctorLoginBtn.addEventListener('click', () => {
+      openModal('doctorLogin');
+    });
+  } 
+};
+window.adminLoginHandler = async function() {
+  const username = document.getElementById('adminUsername').value;
+  const password = document.getElementById('adminPassword').value;
+  const admin = { username, password };
+  try {
+    const response = await fetch(ADMIN_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(admin)
+    });
+    if (response.ok) {
+      const data = await response.json();
+      localStorage.setItem('authToken', data.token);
+      selectRole('admin');
+    } else {
+      alert('Invalid admin credentials. Please try again.');
+    }
+  } catch (error) {
+    alert('Error during admin login. Please try again later.');
+  }
+};
+window.doctorLoginHandler = async function() {
+  const email = document.getElementById('doctorEmail').value;
+  const password = document.getElementById('doctorPassword').value;
+  const doctor = { email, password };
+  try {
+    const response = await fetch(DOCTOR_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(doctor)
+    });
+    if (response.ok) {
+      const data = await response.json();
+      localStorage.setItem('authToken', data.token);
+      selectRole('doctor');
+    } else {
+      alert('Invalid doctor credentials. Please try again.');
+    }
+  } catch (error) {
+    console.error('Error during doctor login:', error);
+    alert('Error during doctor login. Please try again later.');
+  }
+};
+import { openModal } from '../utils/modal.js';
+export function renderHeader() {
+  const headerDiv = document.getElementById("header");
+  const role = localStorage.getItem("userRole") || "patient";
+  const token = localStorage.getItem("authToken");
+  let headerContent = `
+  <header>
+    <div class="logo">
+      <h1>HealthCare System</h1>
+    </div>
+    <nav>`;
+  if ((role === "loggedPatient" || role === "admin" || role === "doctor") && !token) {
+    localStorage.removeItem("userRole");
+    alert("Session expired or invalid login. Please log in again.");
+    window.location.href = "/";
+    return;
+  } else if (role === "admin") {
+    headerContent += `
+      <button id="addDocBtn" class="adminBtn" onclick="openModal('addDoctor')">Add Doctor</button>
+      <a href="#" onclick="logout()">Logout</a>`;
+  }
+  else if (role === "doctor") {
+    headerContent += `
+      <button class="adminBtn"  onclick="selectRole('doctor')">Home</button>
+      <a href="#" onclick="logout()">Logout</a>`;
+  }
+  else if (role === "patient") {
+    headerContent += `
+      <button id="patientLogin" class="adminBtn">Login</button>
+      <button id="patientSignup" class="adminBtn">Sign Up</button>`;
+  }
+  else if (role === "loggedPatient") {
+    headerContent += `
+      <button id="home" class="adminBtn" onclick="window.location.href='/pages/loggedPatientDashboard.html'">Home</button>
+      <button id="patientAppointments" class="adminBtn" onclick="window.location.href='/pages/patientAppointments.html'">Appointments</button>
+      <a href="#" onclick="logoutPatient()">Logout</a>`;
+  } 
+  headerContent += `
+    </nav>
+  </header>`;
+  headerDiv.innerHTML = headerContent;
+  attachHeaderButtonListeners();
+} 
 /*
   Import the openModal function to handle showing login popups/modals
   Import the base API URL from the config file

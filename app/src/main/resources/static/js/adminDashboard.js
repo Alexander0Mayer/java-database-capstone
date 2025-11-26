@@ -1,3 +1,8 @@
+import { getDoctors, filterDoctors, saveDoctor } from '../services/doctorServices.js';
+import { createDoctorCard } from '../components/doctorCard.js';
+import { openModal, closeModal } from '../utils/modalUtils.js';
+
+
 document.getElementById('addDoctorBtn').addEventListener('click', () => {
   openModal('addDoctor');
 });
