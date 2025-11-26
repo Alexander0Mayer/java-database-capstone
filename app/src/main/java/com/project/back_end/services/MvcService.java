@@ -3,10 +3,9 @@ import com.project.back_end.models.Admin;
 import com.project.back_end.models.Appointment;
 import com.project.back_end.models.Doctor;
 import com.project.back_end.models.Patient;
-import com.project.back_end.repositories.AdminRepository;
-import com.project.back_end.repositories.DoctorRepository;
-import com.project.back_end.repositories.PatientRepository;
-import com.project.back_end.services.AdminService;
+import com.project.back_end.repo.AdminRepository;
+import com.project.back_end.repo.DoctorRepository;
+import com.project.back_end.repo.PatientRepository;
 import com.project.back_end.services.DoctorService;
 import com.project.back_end.services.PatientService;
 import org.springframework.http.HttpStatus;
@@ -25,14 +24,12 @@ public class MvcService {
                       AdminRepository adminRepository,
                       DoctorRepository doctorRepository,
                       PatientRepository patientRepository,
-                      AdminService adminService,
                       DoctorService doctorService,
                       PatientService patientService) {
         this.tokenService = tokenService;
         this.adminRepository = adminRepository;
         this.doctorRepository = doctorRepository;
         this.patientRepository = patientRepository;
-        this.adminService = adminService;
         this.doctorService = doctorService;
         this.patientService = patientService;
     }

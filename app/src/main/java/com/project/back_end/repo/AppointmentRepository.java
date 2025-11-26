@@ -1,6 +1,28 @@
 package com.project.back_end.repo;
 
-public interface AppointmentRepository  {
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import com.project.back_end.models.Appointment;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.transaction.annotation.Transactional;
+
+@Repository
+public interface AppointmentRepository extends JpaRepository<Appointment, Long>  {
+   Appointment findByDoctorIdAndAppointmentTimeBetween(Long doctorId, java.time.LocalDateTime start, java.time.LocalDateTime end);
+   Appointment findByDoctorIdAndPatient_NameContainingIgnoreCaseAndAppointmentTimeBetween(Long doctorId, String patientName, java.time.LocalDateTime start, java.time.LocalDateTime end);
+   
+   @Modifying
+   @Transactional
+   void deleteAllByDoctorId(Long doctorId);
+   Appointment findByPatientId(Long patientId);
+   Appointment findByPatient_IdAndStatusOrderByAppointmentTimeAsc(Long patientId, int status);
+   Appointment filterByDoctorNameAndPatientId(String doctorName, Long patientId);
+   Appointment filterByDoctorNameAndPatientIdAndStatus(String doctorName, Long patientId, int status);
+   @Modifying
+   @Transactional
+   void updateStatus(int status, long id);
+
+
 
    // 1. Extend JpaRepository:
 //    - The repository extends JpaRepository<Appointment, Long>, which gives it basic CRUD functionality.

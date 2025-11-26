@@ -1,6 +1,55 @@
 package com.project.back_end.controllers;
 
+import com.project.back_end.models.Prescription;
+import com.project.back_end.services.PrescriptionService;
+import com.project.back_end.services.MvcService;
+import com.project.back_end.services.AppointmentService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import javax.validation.Valid;
+@RestController
+@RequestMapping("${api.path}prescription")
 public class PrescriptionController {
+    private final PrescriptionService prescriptionService;
+    private final Service service;
+    private final AppointmentService appointmentService;
+
+    public PrescriptionController(PrescriptionService prescriptionService,
+                                  Service service,
+                                  AppointmentService appointmentService) {
+        this.prescriptionService = prescriptionService;
+        this.service = service;
+        this.appointmentService = appointmentService;
+    }
+
+    @PostMapping("/save/{token}")
+    public ResponseEntity<?> savePrescription(@Valid @RequestBody Prescription prescription,
+                                              @PathVariable String token) {
+        String error = service.validateToken(token, "doctor");
+        if (!error.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+        appointmentService.updateAppointmentStatus(prescription.getAppointmentId(), "Prescribed");
+        String result = prescriptionService.savePrescription(prescription);
+        if (result.equals("Prescription saved successfully.")) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(result);
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+        }
+    }
+
+    @GetMapping("/{appointmentId}/{token}")
+    public ResponseEntity<?> getPrescription(@PathVariable Long appointmentId,
+                                             @PathVariable String token) {
+        String error = service.validateToken(token, "doctor");
+        if (!error.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+        Prescription prescription = prescriptionService.getPrescriptionByAppointmentId(appointmentId);
+        return ResponseEntity.ok(prescription);
+    }
+
     
 // 1. Set Up the Controller Class:
 //    - Annotate the class with `@RestController` to define it as a REST API controller.

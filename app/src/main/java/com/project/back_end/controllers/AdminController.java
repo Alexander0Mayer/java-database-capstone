@@ -1,7 +1,39 @@
 
 package com.project.back_end.controllers;
 
+import com.project.back_end.DTO.Login;
+import com.project.back_end.services.MvcService;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
+@RestController
+@RequestMapping("${api.path}admin")
 public class AdminController {
+    private final MvcService service;
+
+    @Autowired
+    public AdminController(MvcService service) {
+        this.service = service;
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, Object>> adminLogin(@RequestBody Login login) {
+
+        Map<String, Object> result = service.validateAdmin(login.getUsername(), login.getPassword());
+
+        boolean success = (boolean) result.getOrDefault("success", false);
+
+        if (!success) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(result);
+        }
+
+        return ResponseEntity.ok(result);
+    }
 
 // 1. Set Up the Controller Class:
 //    - Annotate the class with `@RestController` to indicate that it's a REST controller, used to handle web requests and return JSON responses.

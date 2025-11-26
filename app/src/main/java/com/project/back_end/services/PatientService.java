@@ -1,6 +1,147 @@
 package com.project.back_end.services;
-
+import com.project.back_end.DTO.AppointmentDTO;
+import com.project.back_end.models.Appointment;
+import com.project.back_end.models.Patient;
+import com.project.back_end.repo.AppointmentRepository;
+import com.project.back_end.repo.PatientRepository;
+import com.project.back_end.services.TokenService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.stream.Collectors;
+@Service
 public class PatientService {
+    private final PatientRepository patientRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final TokenService tokenService;
+
+    public PatientService(PatientRepository patientRepository,
+                          AppointmentRepository appointmentRepository,
+                          TokenService tokenService) {
+        this.patientRepository = patientRepository;
+        this.appointmentRepository = appointmentRepository;
+        this.tokenService = tokenService;
+    }
+
+    public int createPatient(Patient patient) {
+        try {
+            patientRepository.save(patient);
+            return 1; // Success
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0; // Failure
+        }
+    }
+
+    @Transactional
+    public ResponseEntity<List<AppointmentDTO>> getPatientAppointment(Long patientId) {
+        try {
+            List<Appointment> appointments = appointmentRepository.findByPatientId(patientId);
+            List<AppointmentDTO> appointmentDTOs = appointments.stream()
+                    .map(appointment -> new AppointmentDTO(
+                            appointment.getId(),
+                            appointment.getDoctorId(),
+                            appointment.getPatientId(),
+                            appointment.getAppointmentTime(),
+                            appointment.getStatus()
+                    ))
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(appointmentDTOs);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    @Transactional
+    public ResponseEntity<List<AppointmentDTO>> filterByCondition(Long patientId, String condition) {
+        try {
+            int status;
+            if (condition.equalsIgnoreCase("future")) {
+                status = 0;
+            } else if (condition.equalsIgnoreCase("past")) {
+                status = 1;
+            } else {
+                return ResponseEntity.badRequest().build();
+            }
+            List<Appointment> appointments = appointmentRepository.findByPatient_IdAndStatusOrderByAppointmentTimeAsc(patientId, status);
+            List<AppointmentDTO> appointmentDTOs = appointments.stream()
+                    .map(appointment -> new AppointmentDTO(
+                            appointment.getId(),
+                            appointment.getDoctorId(),
+                            appointment.getPatientId(),
+                            appointment.getAppointmentTime(),
+                            appointment.getStatus()
+                    ))
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(appointmentDTOs);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    @Transactional
+    public ResponseEntity<List<AppointmentDTO>> filterByDoctor(Long patientId, String doctorName) {
+        try {
+            List<Appointment> appointments = appointmentRepository.filterByDoctorNameAndPatientId(doctorName, patientId);
+            List<AppointmentDTO> appointmentDTOs = appointments.stream()
+                    .map(appointment -> new AppointmentDTO(
+                            appointment.getId(),
+                            appointment.getDoctorId(),
+                            appointment.getPatientId(),
+                            appointment.getAppointmentTime(),
+                            appointment.getStatus()
+                    ))
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(appointmentDTOs);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    @Transactional
+    public ResponseEntity<List<AppointmentDTO>> filterByDoctorAndCondition(Long patientId, String doctorName, String condition) {
+        try {
+            int status;
+            if (condition.equalsIgnoreCase("future")) {
+                status = 0;
+            } else if (condition.equalsIgnoreCase("past")) {
+                status = 1;
+            } else {
+                return ResponseEntity.badRequest().build();
+            }
+            List<Appointment> appointments = appointmentRepository.filterByDoctorNameAndPatientIdAndStatus(doctorName, patientId, status);
+            List<AppointmentDTO> appointmentDTOs = appointments.stream()
+                    .map(appointment -> new AppointmentDTO(
+                            appointment.getId(),
+                            appointment.getDoctorId(),
+                            appointment.getPatientId(),
+                            appointment.getAppointmentTime(),
+                            appointment.getStatus()
+                    ))
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(appointmentDTOs);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    public ResponseEntity<Patient> getPatientDetails(String token) {
+        try {
+            String email = tokenService.extractEmail(token);
+            Patient patient = patientRepository.findByEmail(email).orElse(null);
+            if (patient != null) {
+                return ResponseEntity.ok(patient);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
 // 1. **Add @Service Annotation**:
 //    - The `@Service` annotation is used to mark this class as a Spring service component. 
 //    - It will be managed by Spring's container and used for business logic related to patients and appointments.

@@ -1,7 +1,84 @@
 package com.project.back_end.controllers;
 
+import com.project.back_end.DTO.Login;
+import com.project.back_end.models.Patient;
+import com.project.back_end.services.PatientService;
+import com.project.back_end.services.MvcService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import javax.validation.Valid;
+@RestController
+@RequestMapping("/patient")
 public class PatientController {
+    private final PatientService patientService;
+    private final MvcService service;
 
+    public PatientController(PatientService patientService, MvcService service) {
+        this.patientService = patientService;
+        this.service = service;
+    }
+
+    @GetMapping("/{token}")
+    public ResponseEntity<?> getPatient(@PathVariable String token) {
+        String error = service.validateToken(token, "patient");
+        if (!error.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+        Patient patient = service.getPatientFromToken(token);
+        return ResponseEntity.ok(patient);
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> createPatient(@Valid @RequestBody Patient patient) {
+        String validationError = service.validatePatientCreation(patient);
+        if (!validationError.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(validationError);
+        }
+        String result = patientService.createPatient(patient);
+        if (result.equals("Patient registered successfully.")) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(result);
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Login login) {
+        Map<String, Object> result = service.validatePatientLogin(login.getUsername(), login.getPassword());
+        boolean success = (boolean) result.getOrDefault("success", false);
+        if (!success) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/appointments/{patientId}/{token}/{user}")
+    public ResponseEntity<?> getPatientAppointment(@PathVariable Long patientId,
+                                                   @PathVariable String token,
+                                                   @PathVariable String user) {
+        String error = service.validateToken(token, user);
+        if (!error.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+        return ResponseEntity.ok(
+                patientService.getPatientAppointments(patientId)
+        );
+    }
+
+    @GetMapping("/appointments/filter/{condition}/{name}/{token}")
+    public ResponseEntity<?> filterPatientAppointment(@PathVariable String condition,
+                                                      @PathVariable String name,
+                                                      @PathVariable String token) {
+        String error = service.validateToken(token, "patient");
+        if (!error.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+        return ResponseEntity.ok(
+                service.filterPatientAppointments(condition, name, token)
+        );
+    }
+    
 // 1. Set Up the Controller Class:
 //    - Annotate the class with `@RestController` to define it as a REST API controller for patient-related operations.
 //    - Use `@RequestMapping("/patient")` to prefix all endpoints with `/patient`, grouping all patient functionalities under a common route.

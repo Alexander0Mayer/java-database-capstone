@@ -1,6 +1,53 @@
 package com.project.back_end.services;
+import com.project.back_end.models.Prescription;
+import com.project.back_end.repo.PrescriptionRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
+
+import org.springframework.stereotype.Service;
+
+@Service
 public class PrescriptionService {
+    public final PrescriptionRepository prescriptionRepository;
+    public PrescriptionService(PrescriptionRepository prescriptionRepository) {
+        this.prescriptionRepository = prescriptionRepository;
+    }
+    public ResponseEntity<?> savePrescription(Prescription prescription) {
+        try {
+            // Check if a prescription already exists for the given appointment ID
+            Prescription existingPrescription = prescriptionRepository.findByAppointmentId(prescription.getAppointmentId())
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+            if (existingPrescription != null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Prescription already exists for this appointment.");
+            }
+            prescriptionRepository.save(prescription);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body("Prescription saved successfully.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while saving the prescription.");
+        }
+    }   
+    public ResponseEntity<?> getPrescription(Long appointmentId) {
+        try {
+            Prescription prescription = prescriptionRepository.findByAppointmentId(appointmentId)
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+            return ResponseEntity.ok().body(
+                    java.util.Collections.singletonMap("prescription", prescription)
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while fetching the prescription.");
+        }
+    }
     
  // 1. **Add @Service Annotation**:
 //    - The `@Service` annotation marks this class as a Spring service component, allowing Spring's container to manage it.
