@@ -8,8 +8,11 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.Map;
+import java.util.HashMap;
 
 @Component
 public class TokenService {
@@ -17,52 +20,73 @@ public class TokenService {
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
     private final String jwtSecret;
+    private final SecretKey signingKey;
 
-
-    public TokenService(AdminRepository adminRepository, DoctorRepository doctorRepository,
-                    PatientRepository patientRepository,
-                    @Value("${jwt.secret}") String jwtSecret) {
+    public TokenService(AdminRepository adminRepository,
+                        DoctorRepository doctorRepository,
+                        PatientRepository patientRepository,
+                        @Value("${jwt.secret}") String jwtSecret) {
         this.adminRepository = adminRepository;
         this.doctorRepository = doctorRepository;
         this.patientRepository = patientRepository;
         this.jwtSecret = jwtSecret;
+        this.signingKey = Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
-
-    private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
-    }
-
-    public String generateToken(String email) {
+    // --- Token mit Claims generieren ---
+    public String generateToken(String subject, Map<String, String> claims) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + 604800000L); // 7 days
+        Date expiryDate = new Date(now.getTime() + 604800000L); // 7 Tage gültig
 
         return Jwts.builder()
-                .setSubject(email)
+                .setClaims(claims)  // Claims hinzufügen
+                .setSubject(subject) // E-Mail oder Benutzername
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
-                .signWith(getSigningKey())
+                .signWith(signingKey)
                 .compact();
     }
 
-public String extractEmail(String token) {
-    try {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(signingKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-
-        return claims.getSubject();
-    } catch (Exception e) {
-        return null; // Token ungültig oder abgelaufen
+    // --- Überladene Methode für Kompatibilität ---
+    public String generateToken(String subject) {
+        return generateToken(subject, new HashMap<>()); // Leere Claims
     }
-}
 
+    // --- E-Mail aus Token extrahieren ---
+    public String extractEmail(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(signingKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.getSubject();
+        } catch (Exception e) {
+            return null; // Token ungültig oder abgelaufen
+        }
+    }
+
+    // --- Claims aus Token extrahieren ---
+    public Map<String, String> extractClaims(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(signingKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return new HashMap<>(claims); // Alle Claims als Map
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    // --- Token validieren (mit Rolle) ---
     public boolean validateToken(String token, String role) {
         try {
             String email = extractEmail(token);
-            switch (role) {
+            if (email == null) return false;
+
+            switch (role.toLowerCase()) {
                 case "admin":
                     return adminRepository.findByEmail(email).isPresent();
                 case "doctor":
@@ -76,45 +100,17 @@ public String extractEmail(String token) {
             return false;
         }
     }
+
+    // --- Token validieren (ohne Rolle) ---
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parserBuilder()
+                    .setSigningKey(signingKey)
+                    .build()
+                    .parseClaimsJws(token);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }
-
-// 1. **@Component Annotation**
-// The @Component annotation marks this class as a Spring component, meaning Spring will manage it as a bean within its application context.
-// This allows the class to be injected into other Spring-managed components (like services or controllers) where it's needed.
-
-// 2. **Constructor Injection for Dependencies**
-// The constructor injects dependencies for `AdminRepository`, `DoctorRepository`, and `PatientRepository`,
-// allowing the service to interact with the database and validate users based on their role (admin, doctor, or patient).
-// Constructor injection ensures that the class is initialized with all required dependencies, promoting immutability and making the class testable.
-
-// 3. **getSigningKey Method**
-// This method retrieves the HMAC SHA key used to sign JWT tokens.
-// It uses the `jwt.secret` value, which is provided from an external source (like application properties).
-// The `Keys.hmacShaKeyFor()` method converts the secret key string into a valid `SecretKey` for signing and verification of JWTs.
-
-// 4. **generateToken Method**
-// This method generates a JWT token for a user based on their email.
-// - The `subject` of the token is set to the user's email, which is used as an identifier.
-// - The `issuedAt` is set to the current date and time.
-// - The `expiration` is set to 7 days from the issue date, ensuring the token expires after one week.
-// - The token is signed using the signing key generated by `getSigningKey()`, making it secure and tamper-proof.
-// The method returns the JWT token as a string.
-
-// 5. **extractEmail Method**
-// This method extracts the user's email (subject) from the provided JWT token.
-// - The token is first verified using the signing key to ensure it hasn’t been tampered with.
-// - After verification, the token is parsed, and the subject (which represents the email) is extracted.
-// This method allows the application to retrieve the user's identity (email) from the token for further use.
-
-// 6. **validateToken Method**
-// This method validates whether a provided JWT token is valid for a specific user role (admin, doctor, or patient).
-// - It first extracts the email from the token using the `extractEmail()` method.
-// - Depending on the role (`admin`, `doctor`, or `patient`), it checks the corresponding repository (AdminRepository, DoctorRepository, or PatientRepository)
-//   to see if a user with the extracted email exists.
-// - If a match is found for the specified user role, it returns true, indicating the token is valid.
-// - If the role or user does not exist, it returns false, indicating the token is invalid.
-// - The method gracefully handles any errors by returning false if the token is invalid or an exception occurs.
-// This ensures secure access control based on the user's role and their existence in the system.
-
-
-

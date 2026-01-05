@@ -4,12 +4,14 @@ import com.project.back_end.models.Appointment;
 import com.project.back_end.models.Patient;
 import com.project.back_end.repo.AppointmentRepository;
 import com.project.back_end.repo.PatientRepository;
-import com.project.back_end.services.TokenService;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 @Service
 public class PatientService {
@@ -25,15 +27,11 @@ public class PatientService {
         this.tokenService = tokenService;
     }
 
-    public int createPatient(Patient patient) {
-        try {
-            patientRepository.save(patient);
-            return 1; // Success
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0; // Failure
-        }
-    }
+    @Transactional
+    public Patient createPatient(Patient patient) {
+        return patientRepository.save(patient);
+}
+
 
     @Transactional
     public ResponseEntity<List<AppointmentDTO>> getPatientAppointment(Long patientId) {
@@ -130,9 +128,9 @@ public class PatientService {
     public ResponseEntity<Patient> getPatientDetails(String token) {
         try {
             String email = tokenService.extractEmail(token);
-            Patient patient = patientRepository.findByEmail(email).orElse(null);
-            if (patient != null) {
-                return ResponseEntity.ok(patient);
+            Optional<Patient> patient = patientRepository.findByEmail(email);
+            if (patient.isPresent()) {
+                return ResponseEntity.ok(patient.get());
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
@@ -140,6 +138,26 @@ public class PatientService {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    public List<Appointment> filterAppointmentsByConditionAndDoctor(String email, String condition, String doctorName) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'filterAppointmentsByConditionAndDoctor'");
+    }
+
+    public List<Appointment> filterAppointmentsByCondition(String email, String condition) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'filterAppointmentsByCondition'");
+    }
+
+    public List<Appointment> filterAppointmentsByDoctor(String email, String doctorName) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'filterAppointmentsByDoctor'");
+    }
+
+    public List<Appointment> getAllAppointments(String email) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAllAppointments'");
     }
     
 // 1. **Add @Service Annotation**:

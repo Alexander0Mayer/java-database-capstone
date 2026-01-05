@@ -1,22 +1,21 @@
 package com.project.back_end.services;
 
-import java.time.LocalTime;
-import com.project.back_end.models.Doctor;
-import com.project.back_end.models.Appointment;
-import com.project.back_end.repo.DoctorRepository;
-import com.project.back_end.repo.AppointmentRepository;
-import java.time.LocalDate;
-import java.util.stream.Collectors;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import org.springframework.stereotype.Service;
+import java.util.stream.Collectors;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.project.back_end.models.Appointment;
+import com.project.back_end.models.Doctor;
+import com.project.back_end.repo.AppointmentRepository;
+import com.project.back_end.repo.DoctorRepository;
 
 
 @Service
@@ -132,7 +131,7 @@ public class DoctorService {
 
         } catch (Exception e) {
             response.put("status", "error");
-            response.put("message", "Interner Serverfehler.");
+            response.put("message", "internal server error.");
         }
 
         return response;
@@ -149,20 +148,28 @@ public class DoctorService {
         return filterDoctorByTime(doctors, time);
     }
     @Transactional
-    public java.util.List<Doctor> filterDoctorByTime(java.util.List<Doctor> doctors, String time) {
-        return doctors.stream().filter(doctor -> {
-            boolean hasAvailableSlot = doctor.getAvailableTimes().stream().anyMatch(slot -> {
-                int hour = slot.getTime().getHour();
-                if (time.equalsIgnoreCase("AM")) {
-                    return hour >= 9 && hour < 12;
-                } else if (time.equalsIgnoreCase("PM")) {
-                    return hour >= 12 && hour < 17;
-                }
-                return false;
-            });
-            return hasAvailableSlot;
-        }).collect(Collectors.toList());
+    public List<Doctor> filterDoctorByTime(List<Doctor> doctors, String time) {
+
+        return doctors.stream()
+            .filter(doctor ->
+                doctor.getAvailableTimes().stream().anyMatch(slot -> {
+                    // Slot-Format: "09:00-10:00"
+                    String startTimeStr = slot.split("-")[0];
+                    LocalTime startTime = LocalTime.parse(startTimeStr);
+
+                    int hour = startTime.getHour();
+
+                    if ("AM".equalsIgnoreCase(time)) {
+                        return hour >= 9 && hour < 12;
+                    } else if ("PM".equalsIgnoreCase(time)) {
+                        return hour >= 12 && hour < 17;
+                    }
+                    return false;
+                })
+            )
+            .collect(Collectors.toList());
     }
+
     @Transactional
     public java.util.List<Doctor> filterDoctorByNameAndTime(String name, String time) {
         java.util.List<Doctor> doctors = doctorRepository.findByNameContainingIgnoreCase(name);
@@ -186,6 +193,30 @@ public class DoctorService {
         java.util.List<Doctor> doctors = doctorRepository.findAll();
         return filterDoctorByTime(doctors, time);
     }   
+
+    List<Doctor> filterByNameSpecialtyAndTimeSlot(String name, String specialty, String timeSlot) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    public List<Doctor> filterByNameAndSpecialty(String name, String specialty) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'filterByNameAndSpecialty'");
+    }
+    public List<Doctor> filterByNameAndTimeSlot(String name, String timeSlot) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'filterByNameAndTimeSlot'");
+    }
+    public List<Doctor> filterByName(String name) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'filterByName'");
+    }
+    public List<Doctor> filterBySpecialty(String specialty) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'filterBySpecialty'");
+    }
+    public List<Doctor> filterByTimeSlot(String timeSlot) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'filterByTimeSlot'");
+    }
 }
 
 // 1. **Add @Service Annotation**:

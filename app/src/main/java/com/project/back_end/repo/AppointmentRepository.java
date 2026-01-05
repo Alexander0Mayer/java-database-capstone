@@ -14,15 +14,15 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
    List<Appointment> findByDoctorIdAndAppointmentTimeBetween(Long doctorId, java.time.LocalDateTime start, java.time.LocalDateTime end);
    List<Appointment> findByDoctorIdAndPatient_NameContainingIgnoreCaseAndAppointmentTimeBetween(Long doctorId, String patientName, java.time.LocalDateTime start, java.time.LocalDateTime end);
    List<Appointment> findByDoctorIdAndDate(Long doctorId, java.time.LocalDate date);
-   
+
 
    @Modifying
    @Transactional
    void deleteAllByDoctorId(Long doctorId);
-   Appointment findByPatientId(Long patientId);
-   Appointment findByPatient_IdAndStatusOrderByAppointmentTimeAsc(Long patientId, int status);
-   Appointment filterByDoctorNameAndPatientId(String doctorName, Long patientId);
-   Appointment filterByDoctorNameAndPatientIdAndStatus(String doctorName, Long patientId, int status);
+   List<Appointment> findByPatientId(long patientId);
+   List<Appointment> findByPatient_IdAndStatusOrderByAppointmentTimeAsc(Long patientId, int status);
+   List<Appointment> filterByDoctorNameAndPatientId(String doctorName, Long patientId);
+   List<Appointment> filterByDoctorNameAndPatientIdAndStatus(String doctorName, Long patientId, int status);
    @Modifying
    @Transactional
    void updateStatus(int status, long id);

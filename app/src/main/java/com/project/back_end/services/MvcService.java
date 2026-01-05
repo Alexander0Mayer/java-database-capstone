@@ -1,23 +1,23 @@
 package com.project.back_end.services;
-import com.project.back_end.models.Admin;
-import com.project.back_end.models.Appointment;
-import com.project.back_end.models.Doctor;
-import com.project.back_end.models.Patient;
-import com.project.back_end.repo.AdminRepository;
-import com.project.back_end.repo.DoctorRepository;
-import com.project.back_end.repo.PatientRepository;
-import com.project.back_end.repo.AppointmentRepository;
-import com.project.back_end.services.DoctorService;
-import com.project.back_end.services.PatientService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
+import com.project.back_end.models.Admin;
+import com.project.back_end.models.Appointment;
+import com.project.back_end.models.Doctor;
+import com.project.back_end.models.Patient;
+import com.project.back_end.repo.AdminRepository;
+import com.project.back_end.repo.AppointmentRepository;
+import com.project.back_end.repo.DoctorRepository;
+import com.project.back_end.repo.PatientRepository;
 
 
 
@@ -75,7 +75,7 @@ public class MvcService {
         } else if (name != null && timeSlot != null) {
             return doctorService.filterByNameAndTimeSlot(name, timeSlot);
         } else if (specialty != null && timeSlot != null) {
-            return doctorService.filterBySpecialtyAndTimeSlot(specialty, timeSlot);
+            return doctorService.filterByNameAndTimeSlot(specialty, timeSlot);
         } else if (name != null) {
             return doctorService.filterByName(name);
         } else if (specialty != null) {
@@ -86,12 +86,12 @@ public class MvcService {
             return doctorRepository.findAll();
         }
     }
-    public int validateAppointment(Long doctorId, String appointmentDate, String appointmentTime) {
+    public int validateAppointment(long doctorId, LocalDate appointmentDate, String appointmentTime) {
         Optional<Doctor> doctorOpt = doctorRepository.findById(doctorId);
         if (doctorOpt.isPresent()) {
-            List<TimeSlot> availableSlots = doctorService.getAvailableTimeSlots(doctorId, appointmentDate);
-            for (TimeSlot slot : availableSlots) {
-                if (slot.getStartTime().equals(appointmentTime)) {
+            List<String> availableSlots = doctorService.getDoctorAvailability(doctorId, appointmentDate);
+            for (String slot : availableSlots) {
+                if (slot.equals(appointmentTime)) {
                     return 1; // Valid appointment time
                 }
             }
@@ -143,18 +143,17 @@ public class MvcService {
     private final AdminRepository adminRepository;
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
-    private final AdminService adminService;
     private final DoctorService doctorService;
     private final PatientService patientService;
     private final AppointmentRepository appointmentRepository;
 
 
-    public boolean isDoctorAvailable(Long doctorId, LocalDateTime startTime, LocalDateTime endTime, Long excludeAppointmentId) {
+    public boolean isDoctorAvailable(Long doctorId, LocalDateTime startTime, LocalDateTime endTime, long excludeAppointmentId) {
     // Suche nach Terminen des Arztes im gewünschten Zeitfenster, außer dem aktuellen Termin
     List<Appointment> conflictingAppointments = appointmentRepository
         .findByDoctorIdAndAppointmentTimeBetween(doctorId, startTime, endTime)
         .stream()
-        .filter(appointment -> !appointment.getId().equals(excludeAppointmentId))
+        .filter(appointment -> appointment.getId() != excludeAppointmentId)
         .collect(Collectors.toList());
 
     // Wenn es keine Konflikte gibt, ist der Arzt verfügbar
