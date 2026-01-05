@@ -6,14 +6,18 @@ import com.project.back_end.models.Patient;
 import com.project.back_end.repo.AdminRepository;
 import com.project.back_end.repo.DoctorRepository;
 import com.project.back_end.repo.PatientRepository;
+import com.project.back_end.repo.AppointmentRepository;
 import com.project.back_end.services.DoctorService;
 import com.project.back_end.services.PatientService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 
 
@@ -25,13 +29,15 @@ public class MvcService {
                       DoctorRepository doctorRepository,
                       PatientRepository patientRepository,
                       DoctorService doctorService,
-                      PatientService patientService) {
+                      PatientService patientService,
+                      AppointmentRepository appointmentRepository) {
         this.tokenService = tokenService;
         this.adminRepository = adminRepository;
         this.doctorRepository = doctorRepository;
         this.patientRepository = patientRepository;
         this.doctorService = doctorService;
         this.patientService = patientService;
+        this.appointmentRepository = appointmentRepository;
     }
     public String validateToken(String token, String userRole) {
         boolean isValid = tokenService.validateToken(token, userRole);
@@ -132,6 +138,7 @@ public class MvcService {
             return patientService.getAllAppointments(email);
         }
     }
+    
     private final TokenService tokenService;
     private final AdminRepository adminRepository;
     private final DoctorRepository doctorRepository;
@@ -139,7 +146,20 @@ public class MvcService {
     private final AdminService adminService;
     private final DoctorService doctorService;
     private final PatientService patientService;
+    private final AppointmentRepository appointmentRepository;
 
+
+    public boolean isDoctorAvailable(Long doctorId, LocalDateTime startTime, LocalDateTime endTime, Long excludeAppointmentId) {
+    // Suche nach Terminen des Arztes im gewünschten Zeitfenster, außer dem aktuellen Termin
+    List<Appointment> conflictingAppointments = appointmentRepository
+        .findByDoctorIdAndAppointmentTimeBetween(doctorId, startTime, endTime)
+        .stream()
+        .filter(appointment -> !appointment.getId().equals(excludeAppointmentId))
+        .collect(Collectors.toList());
+
+    // Wenn es keine Konflikte gibt, ist der Arzt verfügbar
+    return conflictingAppointments.isEmpty();
+}
 // 1. **@Service Annotation**
 // The @Service annotation marks this class as a service component in Spring. This allows Spring to automatically detect it through component scanning
 // and manage its lifecycle, enabling it to be injected into controllers or other services using @Autowired or constructor injection.

@@ -1,28 +1,33 @@
 package com.project.back_end.services;
 
-import com.project.back_end.repositories.AdminRepository;
-import com.project.back_end.repositories.DoctorRepository;
-import com.project.back_end.repositories.PatientRepository;
+import com.project.back_end.repo.AdminRepository;
+import com.project.back_end.repo.DoctorRepository;
+import com.project.back_end.repo.PatientRepository;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.util.Date;
+
 @Component
 public class TokenService {
     private final AdminRepository adminRepository;
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
+    private final String jwtSecret;
 
-    @Value("${jwt.secret}")
-    private String jwtSecret;
 
-    public TokenService(AdminRepository adminRepository, DoctorRepository doctorRepository, PatientRepository patientRepository) {
+    public TokenService(AdminRepository adminRepository, DoctorRepository doctorRepository,
+                    PatientRepository patientRepository,
+                    @Value("${jwt.secret}") String jwtSecret) {
         this.adminRepository = adminRepository;
         this.doctorRepository = doctorRepository;
         this.patientRepository = patientRepository;
+        this.jwtSecret = jwtSecret;
     }
+
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
@@ -40,14 +45,19 @@ public class TokenService {
                 .compact();
     }
 
-    public String extractEmail(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+public String extractEmail(String token) {
+    try {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(signingKey)
                 .build()
                 .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+                .getBody();
+
+        return claims.getSubject();
+    } catch (Exception e) {
+        return null; // Token ungültig oder abgelaufen
     }
+}
 
     public boolean validateToken(String token, String role) {
         try {
@@ -66,7 +76,7 @@ public class TokenService {
             return false;
         }
     }
-
+}
 
 // 1. **@Component Annotation**
 // The @Component annotation marks this class as a Spring component, meaning Spring will manage it as a bean within its application context.
@@ -107,4 +117,4 @@ public class TokenService {
 // This ensures secure access control based on the user's role and their existence in the system.
 
 
-}
+

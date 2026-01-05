@@ -142,5 +142,14 @@ public class Appointment {
   public void setStatus(int status) {
       this.status = status;
   }
+  public Long getDoctorId() {
+      return doctor != null ? doctor.getId() : null;
+  }
+  public Long getPatientId() {
+      return patient != null ? patient.getId() : null;
+  }
+  public void setDoctorId(Long doctorId) {
+      this.doctor.setId(doctorId);
+  }
 }
 

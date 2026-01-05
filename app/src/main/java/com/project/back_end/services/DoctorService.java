@@ -1,29 +1,44 @@
 package com.project.back_end.services;
 
+import java.time.LocalTime;
 import com.project.back_end.models.Doctor;
 import com.project.back_end.models.Appointment;
 import com.project.back_end.repo.DoctorRepository;
 import com.project.back_end.repo.AppointmentRepository;
+import java.time.LocalDate;
+import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 @Service
 public class DoctorService {
     private final DoctorRepository doctorRepository;
     private final AppointmentRepository appointmentRepository;
     private final TokenService tokenService;
+    private final PasswordEncoder passwordEncoder;
 
     public DoctorService(DoctorRepository doctorRepository,
                          AppointmentRepository appointmentRepository,
-                         TokenService tokenService) {
+                         TokenService tokenService,
+                         PasswordEncoder passwordEncoder) {
         this.doctorRepository = doctorRepository;
         this.appointmentRepository = appointmentRepository;
         this.tokenService = tokenService;
+        this.passwordEncoder = passwordEncoder;
     }
     @Transactional
-    public List<String> getDoctorAvailability(Long doctorId, java.time.LocalDate date) {
+    public List<String> getDoctorAvailability(Long doctorId, LocalDate date) {
         List<Appointment> appointments = appointmentRepository.findByDoctorIdAndDate(doctorId, date);
-        java.util.Set<java.time.LocalTime> bookedSlots = appointments.stream()
+        java.util.Set<LocalTime> bookedSlots = appointments.stream()
                 .map(appointment -> appointment.getAppointmentTime().toLocalTime())
                 .collect(Collectors.toSet());
 
@@ -38,9 +53,11 @@ public class DoctorService {
     @Transactional
     public int saveDoctor(Doctor doctor) {
         try {
-            if (doctorRepository.findByEmail(doctor.getEmail()).isPresent()) {
-                return -1; // Conflict: Doctor with the same email already exists
+            if (doctorRepository.findByEmail(doctor.getEmail()) != null) {
+                return -1; // Conflict
             }
+            // Passwort hashen, bevor es gespeichert wird
+            doctor.setPassword(passwordEncoder.encode(doctor.getPassword()));
             doctorRepository.save(doctor);
             return 1; // Success
         } catch (Exception e) {
@@ -76,30 +93,52 @@ public class DoctorService {
             return 0; // Internal Error
         }
     }
-    public java.util.Map<String, Object> validateDoctor(String email, String password) {
-        java.util.Map<String, Object> response = new java.util.HashMap<>();
+    @Transactional(readOnly = true)
+    public Map<String, Object> validateDoctor(String email, String password) {
+        Map<String, Object> response = new HashMap<>();
+
+        if (email == null || email.trim().isEmpty() || password == null || password.trim().isEmpty()) {
+            response.put("status", "error");
+            response.put("message", "E-Mail und Passwort sind Pflichtfelder.");
+            return response;
+        }
+
         try {
-            java.util.Optional<Doctor> doctorOpt = doctorRepository.findByEmail(email);
-            if (doctorOpt.isPresent()) {
-                Doctor doctor = doctorOpt.get();
-                if (doctor.getPassword().equals(password)) {
-                    String token = tokenService.generateToken(email);
-                    response.put("status", "success");
-                    response.put("token", token);
-                } else {
-                    response.put("status", "error");
-                    response.put("message", "Invalid password.");
-                }
-            } else {
+            Doctor doctorOpt = doctorRepository.findByEmail(email);
+            if (doctorOpt == null) {
                 response.put("status", "error");
-                response.put("message", "Doctor not found.");
+                response.put("message", "Arzt nicht gefunden.");
+                return response;
             }
+
+            Doctor doctor = doctorOpt;
+
+            if (!passwordEncoder.matches(password, doctor.getPassword())) {
+                response.put("status", "error");
+                response.put("message", "wrong password.");
+                return response;
+            }
+
+            // doctor.getId() ist ein primitiver long-Wert und kann nicht null sein!
+            Map<String, String> claims = new HashMap<>();
+            claims.put("role", "DOCTOR");
+            claims.put("doctorId", String.valueOf(doctor.getId()));  // Sicher, da long nie null ist
+
+            String token = tokenService.generateToken(email, claims);
+
+            response.put("status", "success");
+            response.put("token", token);
+            response.put("doctorId", doctor.getId());
+
         } catch (Exception e) {
             response.put("status", "error");
-            response.put("message", "Internal server error.");
+            response.put("message", "Interner Serverfehler.");
         }
+
         return response;
     }
+
+
     @Transactional
     public java.util.List<Doctor> findDoctorByName(String name) {
         return doctorRepository.findByNameContainingIgnoreCase(name);
@@ -235,5 +274,3 @@ public class DoctorService {
 //    - The method checks all doctors' available times and returns those available during the specified time period.
 //    - Instruction: Ensure proper filtering logic to handle AM/PM time periods.
 
-   
-}

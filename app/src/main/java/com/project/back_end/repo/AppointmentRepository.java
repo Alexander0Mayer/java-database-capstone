@@ -1,16 +1,21 @@
 package com.project.back_end.repo;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-import com.project.back_end.models.Appointment;
 import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.project.back_end.models.Appointment;
 
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long>  {
-   Appointment findByDoctorIdAndAppointmentTimeBetween(Long doctorId, java.time.LocalDateTime start, java.time.LocalDateTime end);
-   Appointment findByDoctorIdAndPatient_NameContainingIgnoreCaseAndAppointmentTimeBetween(Long doctorId, String patientName, java.time.LocalDateTime start, java.time.LocalDateTime end);
+   List<Appointment> findByDoctorIdAndAppointmentTimeBetween(Long doctorId, java.time.LocalDateTime start, java.time.LocalDateTime end);
+   List<Appointment> findByDoctorIdAndPatient_NameContainingIgnoreCaseAndAppointmentTimeBetween(Long doctorId, String patientName, java.time.LocalDateTime start, java.time.LocalDateTime end);
+   List<Appointment> findByDoctorIdAndDate(Long doctorId, java.time.LocalDate date);
    
+
    @Modifying
    @Transactional
    void deleteAllByDoctorId(Long doctorId);

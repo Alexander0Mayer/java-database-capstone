@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import com.project.back_end.models.Appointment;
 import com.project.back_end.services.AppointmentService;
 import com.project.back_end.services.MvcService;
@@ -36,11 +36,21 @@ public class AppointmentController {
         if (!error.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         }
-        LocalDate date = LocalDate.parse(appointmentDate);
+        LocalDate date;
+        try {
+            date = LocalDate.parse(appointmentDate);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid date format. Use YYYY-MM-DD.");
+        }
         return ResponseEntity.ok(
-                appointmentService.getAppointmentsByDateAndPatientName(date, patientName)
+                appointmentService.getAppointmentsByDateAndPatientName(
+                        service.getUserIdFromToken(token),
+                        patientName,
+                        date
+                )
         );
     }
+
 
     @PostMapping("/book/{token}")
     public ResponseEntity<?> bookAppointment(@Valid @RequestBody Appointment appointment,

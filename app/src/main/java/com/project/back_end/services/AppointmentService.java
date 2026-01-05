@@ -1,39 +1,46 @@
 package com.project.back_end.services;
-import com.project.back_end.DTO.AppointmentDTO;
-import com.project.back_end.models.Appointment;
-import com.project.back_end.repo.AppointmentRepository;
-import com.project.back_end.repo.DoctorRepository;
-import com.project.back_end.repo.PatientRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.project.back_end.DTO.AppointmentDTO;
+import com.project.back_end.models.Appointment;
+import com.project.back_end.models.Doctor;
+import com.project.back_end.models.Patient;
+import com.project.back_end.repo.AppointmentRepository;
+import com.project.back_end.repo.DoctorRepository;
+import com.project.back_end.repo.PatientRepository;
+
+
 
 
 @Service
 public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
-    private final Service service;
-    private final TokenService tokenService;
+    private final MvcService service;
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
 
-    public AppointmentService(AppointmentRepository appointmentRepository, Service service,
+
+    public AppointmentService(AppointmentRepository appointmentRepository, MvcService service,
                               TokenService tokenService, PatientRepository patientRepository,
                               DoctorRepository doctorRepository) {
         this.appointmentRepository = appointmentRepository;
         this.service = service;
-        this.tokenService = tokenService;
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
     }
 
     @Transactional
     public int bookAppointment(Appointment appointment) {
+        if (appointment == null) {
+            throw new IllegalArgumentException("Appointment object must not be null");
+        }
         try {
             appointmentRepository.save(appointment);
             return 1; // Success
@@ -77,7 +84,7 @@ public class AppointmentService {
         if (!existingAppointment.getPatientId().equals(patientId)) {
             return "Unauthorized: You can only cancel your own appointments.";
         }
-        try {
+        try { 
             appointmentRepository.deleteById(appointmentId);
             return "Appointment canceled successfully.";
         } catch (Exception e) {
@@ -89,12 +96,13 @@ public class AppointmentService {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
         List<Appointment> appointments;
+        if (doctorId == null || date == null) {
+                throw new IllegalArgumentException("Doctor ID and date must not be null");
+            }
         if (patientName == null || patientName.isEmpty()) {
-            appointments = appointmentRepository.findByDoctorIdAndAppointmentTimeBetween(
-                    doctorId, startOfDay, endOfDay);
+            appointments = appointmentRepository.findByDoctorIdAndAppointmentTimeBetween(doctorId, startOfDay, endOfDay);
         } else {
-            appointments = appointmentRepository.findByDoctorIdAndPatient_NameContainingIgnoreCaseAndAppointmentTimeBetween(
-                    doctorId, patientName, startOfDay, endOfDay);
+            appointments = appointmentRepository.findByDoctorIdAndPatient_NameContainingIgnoreCaseAndAppointmentTimeBetween(doctorId, patientName, startOfDay, endOfDay);
         }
         return appointments.stream().map(appointment -> {
             Patient patient = patientRepository.findById(appointment.getPatientId()).orElse(null);
@@ -117,6 +125,7 @@ public class AppointmentService {
     public void changeStatus(Long appointmentId, int status) {
         appointmentRepository.updateStatus(status, appointmentId);
     }
+
 
 // 1. **Add @Service Annotation**:
 //    - To indicate that this class is a service layer class for handling business logic.
