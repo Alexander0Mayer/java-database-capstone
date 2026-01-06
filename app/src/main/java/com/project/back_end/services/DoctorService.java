@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -103,14 +104,14 @@ public class DoctorService {
         }
 
         try {
-            Doctor doctorOpt = doctorRepository.findByEmail(email);
+            Optional<Doctor> doctorOpt = doctorRepository.findByEmail(email);
             if (doctorOpt == null) {
                 response.put("status", "error");
                 response.put("message", "Arzt nicht gefunden.");
                 return response;
             }
 
-            Doctor doctor = doctorOpt;
+            Doctor doctor = doctorOpt.get();
 
             if (!passwordEncoder.matches(password, doctor.getPassword())) {
                 response.put("status", "error");

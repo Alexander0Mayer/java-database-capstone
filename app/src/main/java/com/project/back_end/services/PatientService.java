@@ -1,18 +1,18 @@
 package com.project.back_end.services;
-import com.project.back_end.DTO.AppointmentDTO;
-import com.project.back_end.models.Appointment;
-import com.project.back_end.models.Patient;
-import com.project.back_end.repo.AppointmentRepository;
-import com.project.back_end.repo.PatientRepository;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import com.project.back_end.DTO.AppointmentDTO;
+import com.project.back_end.models.Appointment;
+import com.project.back_end.models.Patient;
+import com.project.back_end.repo.AppointmentRepository;
+import com.project.back_end.repo.PatientRepository;
 @Service
 public class PatientService {
     private final PatientRepository patientRepository;
@@ -29,8 +29,13 @@ public class PatientService {
 
     @Transactional
     public Patient createPatient(Patient patient) {
-        return patientRepository.save(patient);
-}
+        if (patient == null) {
+            throw new IllegalArgumentException("Patient must not be null");
+        } else {
+        Patient savedPatient = patientRepository.save(patient);
+        return savedPatient;
+        }
+    }
 
 
     @Transactional

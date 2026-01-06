@@ -1,5 +1,7 @@
 package com.project.back_end.DTO;
 
+import java.time.LocalDateTime;
+
 public class AppointmentDTO {
     private Long id;
     private Long doctorId;
@@ -50,6 +52,19 @@ public class AppointmentDTO {
     }
     public java.time.LocalDateTime getEndTime() {
         return appointmentTime.plusHours(1);
+    }
+        public AppointmentDTO(Long id, Long doctorId, Long patientId, LocalDateTime appointmentTime, int status) {
+        this.id = id;
+        this.doctorId = doctorId;
+        this.patientId = patientId;
+        this.appointmentTime = appointmentTime;
+        this.status = status;
+        // Standardwerte für fehlende Felder
+        this.doctorName = "Unknown";
+        this.patientName = "Unknown";
+        this.patientEmail = "Unknown";
+        this.patientPhone = "Unknown";
+        this.patientAddress = "Unknown";
     }
     public AppointmentDTO(Long id, Long doctorId, String doctorName, Long patientId, String patientName,
                           String patientEmail, String patientPhone, String patientAddress,
