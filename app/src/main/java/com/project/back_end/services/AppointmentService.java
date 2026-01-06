@@ -3,6 +3,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -124,6 +125,10 @@ public class AppointmentService {
     @Transactional
     public void changeStatus(Long appointmentId, int status) {
         appointmentRepository.updateStatus(status, appointmentId);
+    }
+
+    public Optional<Appointment> getAppointmentById(Long appointmentId) {
+        return appointmentRepository.findById(appointmentId);
     }
 
 

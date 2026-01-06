@@ -4,10 +4,14 @@ import com.project.back_end.DTO.Login;
 import com.project.back_end.models.Patient;
 import com.project.back_end.services.PatientService;
 import com.project.back_end.services.MvcService;
+
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/patient")
 public class PatientController {
@@ -31,21 +35,20 @@ public class PatientController {
 
     @PostMapping("/register")
     public ResponseEntity<?> createPatient(@Valid @RequestBody Patient patient) {
-        String validationError = service.validatePatientCreation(patient);
-        if (!validationError.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(validationError);
-        }
-        String result = patientService.createPatient(patient);
-        if (result.equals("Patient registered successfully.")) {
-            return ResponseEntity.status(HttpStatus.CREATED).body(result);
+        if (!service.validatePatient(patient.getEmail(), patient.getPhone())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Patient already exists.");
         } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+            if (patientService.createPatient(patient) != null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating patient.");
+            } else {
+                return ResponseEntity.status(HttpStatus.CREATED).body("Patient registered successfully.");
+            }
         }
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Login login) {
-        Map<String, Object> result = service.validatePatientLogin(login.getUsername(), login.getPassword());
+        Map<String, Object> result = service.validatePatientLogin(login.getEmail(), login.getPassword());
         boolean success = (boolean) result.getOrDefault("success", false);
         if (!success) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(result);
@@ -62,7 +65,7 @@ public class PatientController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         }
         return ResponseEntity.ok(
-                patientService.getPatientAppointments(patientId)
+                patientService.getPatientAppointment(patientId)
         );
     }
 

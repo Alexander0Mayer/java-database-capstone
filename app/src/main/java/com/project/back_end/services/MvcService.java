@@ -1,6 +1,8 @@
 package com.project.back_end.services;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,27 +48,46 @@ public class MvcService {
         }
         return "";
     }
-    public ResponseEntity<?> validateAdmin(String username, String password) {
+    public Map<String, Object> validateAdmin(String username, String password) {
+        Map<String, Object> response = new HashMap<>();
+
         try {
             Optional<Admin> adminOpt = adminRepository.findByUsername(username);
-            if (adminOpt.isPresent()) {
-                Admin admin = adminOpt.get();
-                if (admin.getPassword().equals(password)) {
-                    String token = tokenService.generateToken(admin.getUsername());
-                    return ResponseEntity.ok().body(Map.of("token", token));
-                } else {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body("Unauthorized: Incorrect password.");
-                }
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Unauthorized: Admin not found.");
+
+            if (adminOpt.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Admin not found.");
+                return response;
             }
+
+            Admin admin = adminOpt.get();
+
+            if (!admin.getPassword().equals(password)) {
+                response.put("success", false);
+                response.put("message", "Incorrect password.");
+                return response;
+            }
+
+            // Erfolg: Token generieren
+            String token = tokenService.generateToken(admin.getUsername());
+
+            response.put("success", true);
+            response.put("message", "Login successful.");
+            response.put("token", token);
+
+            // Optional: Claims hinzufügen (falls benötigt)
+            Map<String, String> claims = tokenService.extractClaims(token);
+            response.put("claims", claims);
+
+            return response;
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Internal Server Error: " + e.getMessage());
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return response;
         }
     }
+
     public List<Doctor> filterDoctor(String name, String specialty, String timeSlot) {
         if (name != null && specialty != null && timeSlot != null) {
             return doctorService.filterByNameSpecialtyAndTimeSlot(name, specialty, timeSlot);
@@ -86,7 +107,7 @@ public class MvcService {
             return doctorRepository.findAll();
         }
     }
-    public int validateAppointment(long doctorId, LocalDate appointmentDate, String appointmentTime) {
+    public int validateAppointment(long doctorId, LocalDate appointmentDate, LocalTime appointmentTime) {
         Optional<Doctor> doctorOpt = doctorRepository.findById(doctorId);
         if (doctorOpt.isPresent()) {
             List<String> availableSlots = doctorService.getDoctorAvailability(doctorId, appointmentDate);
@@ -162,6 +183,9 @@ public class MvcService {
 // 1. **@Service Annotation**
 // The @Service annotation marks this class as a service component in Spring. This allows Spring to automatically detect it through component scanning
 // and manage its lifecycle, enabling it to be injected into controllers or other services using @Autowired or constructor injection.
+    public Long getUserIdFromToken(String token) {
+        return Long.parseLong(tokenService.extractClaims(token).get("userId"));
+    }
 
 // 2. **Constructor Injection for Dependencies**
 // The constructor injects all required dependencies (TokenService, Repositories, and other Services). This approach promotes loose coupling, improves testability,
@@ -219,6 +243,34 @@ public class MvcService {
 // - Depending on which filters (condition, doctor name) are provided, it delegates the filtering logic to PatientService.
 // - If no filters are provided, it retrieves all appointments for the patient.
 // This flexible method supports patient-specific querying and enhances user experience on the client side.
+
+    public Map<String, String> extractClaims(String token) {
+        try {
+            return tokenService.extractClaims(token); // Delegiert an TokenService
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    public Patient getPatientFromToken(String token) {
+    try {
+        // 1. Extrahiere die E-Mail aus dem Token (angenommen, der Token enthält die E-Mail als Claim)
+        String email = tokenService.extractEmail(token);
+
+        // 2. Suche den Patienten in der Datenbank
+        Optional<Patient> patientOpt = patientRepository.findByEmail(email);
+
+        // 3. Falls nicht gefunden, werfe eine Exception
+        if (patientOpt.isEmpty()) {
+            throw new RuntimeException("Patient not found for token: " + token);
+        }
+
+        // 4. Gib den Patienten zurück
+        return patientOpt.get();
+
+    } catch (Exception e) {
+        throw new RuntimeException("Failed to retrieve patient from token: " + e.getMessage(), e);
+    }
+}
 
 
 }

@@ -218,6 +218,18 @@ public class DoctorService {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'filterByTimeSlot'");
     }
+
+    public boolean existsById(Long doctorId) {
+        if (doctorId == null) {
+            return false;
+        } else {
+            return doctorRepository.existsById(doctorId);
+        }
+    }
+    public boolean existsByEmail(String email) {
+        return doctorRepository.findByEmail(email) != null;
+    }
+
 }
 
 // 1. **Add @Service Annotation**:

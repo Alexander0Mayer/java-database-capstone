@@ -1,22 +1,32 @@
 package com.project.back_end.controllers;
 
+import java.time.LocalDate;
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.project.back_end.DTO.Login;
 import com.project.back_end.models.Doctor;
 import com.project.back_end.services.DoctorService;
 import com.project.back_end.services.MvcService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import javax.validation.Valid;
-import java.util.HashMap;
-import java.util.Map;
+
+import jakarta.validation.Valid;
 @RestController
 @RequestMapping("${api.path}doctor")
 public class DoctorController {
     private final DoctorService doctorService;
-    private final Service service;
+    private final MvcService service;
 
-    public DoctorController(DoctorService doctorService, Service service) {
+    public DoctorController(DoctorService doctorService, MvcService service) {
         this.doctorService = doctorService;
         this.service = service;
     }
@@ -24,23 +34,18 @@ public class DoctorController {
     @GetMapping("/availability/{user}/{doctorId}/{date}/{token}")
     public ResponseEntity<?> getDoctorAvailability(@PathVariable String user,
                                                    @PathVariable Long doctorId,
-                                                   @PathVariable String date,
+                                                   @PathVariable LocalDate date,
                                                    @PathVariable String token) {
         String error = service.validateToken(token, user);
         if (!error.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         }
-        boolean isAvailable = doctorService.isDoctorAvailable(doctorId, date);
-        Map<String, Object> response = new HashMap<>();
-        response.put("doctorId", doctorId);
-        response.put("date", date);
-        response.put("isAvailable", isAvailable);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(doctorService.getDoctorAvailability(doctorId, date));
     }
 
     @GetMapping("/")
     public ResponseEntity<?> getDoctor() {
-        return ResponseEntity.ok(Map.of("doctors", doctorService.getAllDoctors()));
+        return ResponseEntity.ok(Map.of("doctors", doctorService.getDoctors()));
     }
 
     @PostMapping("/register/{token}")
@@ -53,8 +58,8 @@ public class DoctorController {
         if (doctorService.existsByEmail(doctor.getEmail())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Doctor with this email already exists.");
         }
-        String result = doctorService.addDoctor(doctor);
-        if (result.equals("Doctor registered successfully.")) {
+        int result = doctorService.saveDoctor(doctor);
+        if (result == 1) {
             return ResponseEntity.status(HttpStatus.CREATED).body(result);
         } else {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
@@ -83,8 +88,8 @@ public class DoctorController {
         if (!doctorService.existsById(doctor.getId())) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Doctor not found.");
         }
-        String result = doctorService.updateDoctor(doctor);
-        if (result.equals("Doctor updated successfully.")) {
+        int result = doctorService.updateDoctor(doctor);
+        if (result == 1) {
             return ResponseEntity.ok(result);
         } else {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
@@ -100,8 +105,8 @@ public class DoctorController {
         if (!doctorService.existsById(doctorId)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Doctor not found.");
         }
-        String result = doctorService.deleteDoctor(doctorId);
-        if (result.equals("Doctor deleted successfully.")) {
+        int result = doctorService.deleteDoctor(doctorId);
+        if (result == 1) {
             return ResponseEntity.ok(result);
         } else {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
@@ -112,7 +117,7 @@ public class DoctorController {
                                     @PathVariable String time,
                                     @PathVariable String speciality) {
         return ResponseEntity.ok(
-                Map.of("doctors", service.filterDoctors(name, time, speciality))
+                Map.of("doctors", service.filterDoctor(name, time, speciality))
         );
     }
     
