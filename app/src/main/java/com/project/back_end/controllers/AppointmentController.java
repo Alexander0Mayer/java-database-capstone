@@ -126,47 +126,33 @@ public class AppointmentController {
     }
 
 
-    @PutMapping("/update/{token}")
+    @PutMapping("/update/{token}/{appointmentId}")
     public ResponseEntity<String> updateAppointment(
             @Valid @RequestBody Appointment updatedAppointment,
-            @PathVariable String token) {
+            @PathVariable String token,
+            @PathVariable Long appointmentId) {
 
-        // 1. Token validieren und patientId extrahieren
         String tokenError = service.validateToken(token, "patient");
         if (!tokenError.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(tokenError);
         }
         Long patientId = service.getUserIdFromToken(token);
 
-        // 2. Appointment-ID prüfen
-        Long appointmentId = updatedAppointment.getId();
-        if (appointmentId == null) {
-            return ResponseEntity.badRequest().body("Appointment ID is required.");
-        }
-
-        // 3. Update im Service durchführen
         String updateResult = appointmentService.updateAppointment(
                 appointmentId,
                 patientId,
                 updatedAppointment
         );
 
-        // 4. Ergebnis verarbeiten
-        switch (updateResult) {
-            case "Appointment updated successfully.":
-                return ResponseEntity.ok(updateResult);
-            case "Appointment not found.":
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(updateResult);
-            case "Unauthorized: You can only update your own appointments.":
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(updateResult);
-            case "Cannot update appointment: Appointment is not in a modifiable state.":
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(updateResult);
-            case "Doctor is not available at the selected time.":
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(updateResult);
-            default:
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("Failed to update appointment.");
-        }
+        return switch (updateResult) {
+            case "Appointment updated successfully." -> ResponseEntity.ok(updateResult);
+            case "Appointment not found." -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(updateResult);
+            case "Unauthorized: You can only update your own appointments." -> ResponseEntity.status(HttpStatus.FORBIDDEN).body(updateResult);
+            case "Cannot update appointment: Appointment is not in a modifiable state." -> ResponseEntity.status(HttpStatus.BAD_REQUEST).body(updateResult);
+            case "Doctor is not available at the selected time." -> ResponseEntity.status(HttpStatus.CONFLICT).body(updateResult);
+            default -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to update appointment.");
+        };
     }
 
 

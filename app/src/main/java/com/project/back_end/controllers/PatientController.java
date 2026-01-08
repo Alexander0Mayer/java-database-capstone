@@ -1,26 +1,34 @@
 package com.project.back_end.controllers;
 
-import com.project.back_end.DTO.Login;
-import com.project.back_end.models.Patient;
-import com.project.back_end.services.PatientService;
-import com.project.back_end.services.MvcService;
-
-import java.util.Map;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.project.back_end.DTO.Login;
+import com.project.back_end.models.Patient;
+import com.project.back_end.services.MvcService;
+import com.project.back_end.services.PatientService;
+import com.project.back_end.services.TokenService;
+
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/patient")
 public class PatientController {
+
+    private final TokenService tokenService;
     private final PatientService patientService;
     private final MvcService service;
 
-    public PatientController(PatientService patientService, MvcService service) {
+    public PatientController(PatientService patientService, MvcService service, TokenService tokenService) {
         this.patientService = patientService;
         this.service = service;
+        this.tokenService = tokenService;
     }
 
     @GetMapping("/{token}")
@@ -48,13 +56,10 @@ public class PatientController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Login login) {
-        Map<String, Object> result = service.validatePatientLogin(login.getEmail(), login.getPassword());
-        boolean success = (boolean) result.getOrDefault("success", false);
-        if (!success) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(result);
-        }
-        return ResponseEntity.ok(result);
+        // Ruf die Service-Methode auf und gib das ResponseEntity direkt zurück
+        return service.validatePatientLogin(login.getEmail(), login.getPassword());
     }
+
 
     @GetMapping("/appointments/{patientId}/{token}/{user}")
     public ResponseEntity<?> getPatientAppointment(@PathVariable Long patientId,
@@ -69,16 +74,17 @@ public class PatientController {
         );
     }
 
-    @GetMapping("/appointments/filter/{condition}/{name}/{token}")
+    @GetMapping("/appointments/filter/{condition}/{doctorName}/{token}")
     public ResponseEntity<?> filterPatientAppointment(@PathVariable String condition,
-                                                      @PathVariable String name,
+                                                      @PathVariable String doctorName,
                                                       @PathVariable String token) {
         String error = service.validateToken(token, "patient");
         if (!error.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         }
+        String email = tokenService.extractEmail(token);
         return ResponseEntity.ok(
-                service.filterPatientAppointments(condition, name, token)
+                patientService.filterAppointmentsByConditionAndDoctor(email, condition, doctorName)
         );
     }
     
