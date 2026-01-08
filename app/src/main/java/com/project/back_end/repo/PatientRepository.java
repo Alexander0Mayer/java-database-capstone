@@ -10,7 +10,7 @@ import com.project.back_end.models.Patient;
 public interface PatientRepository extends JpaRepository<Patient, Long> {
     Optional<Patient> findByEmail(String email);
     Optional<Patient> findByEmailOrPhone(String email, String phone);
-    Optional<Patient> findByPhoneNumber(String phone);
+    Optional<Patient> findByPhone(String phone);
     
     // 1. Extend JpaRepository:
 //    - The repository extends JpaRepository<Patient, Long>, which provides basic CRUD functionality.

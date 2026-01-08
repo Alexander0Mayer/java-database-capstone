@@ -41,7 +41,7 @@ public class PatientService {
     @Transactional
     public ResponseEntity<List<AppointmentDTO>> getPatientAppointment(Long patientId) {
         try {
-            List<Appointment> appointments = appointmentRepository.findByPatientId(patientId);
+            List<Appointment> appointments = appointmentRepository.findByPatient_Id(patientId);
             List<AppointmentDTO> appointmentDTOs = appointments.stream()
                     .map(appointment -> new AppointmentDTO(
                             appointment.getId(),
@@ -87,7 +87,7 @@ public class PatientService {
     @Transactional
     public ResponseEntity<List<AppointmentDTO>> filterByDoctor(Long patientId, String doctorName) {
         try {
-            List<Appointment> appointments = appointmentRepository.filterByDoctorNameAndPatientId(doctorName, patientId);
+            List<Appointment> appointments = appointmentRepository.findByDoctor_NameAndPatient_Id(doctorName, patientId);
             List<AppointmentDTO> appointmentDTOs = appointments.stream()
                     .map(appointment -> new AppointmentDTO(
                             appointment.getId(),
@@ -114,7 +114,7 @@ public class PatientService {
             } else {
                 return ResponseEntity.badRequest().build();
             }
-            List<Appointment> appointments = appointmentRepository.filterByDoctorNameAndPatientIdAndStatus(doctorName, patientId, status);
+            List<Appointment> appointments = appointmentRepository.findByDoctor_NameAndPatient_IdAndStatus(doctorName, patientId, status);
             List<AppointmentDTO> appointmentDTOs = appointments.stream()
                     .map(appointment -> new AppointmentDTO(
                             appointment.getId(),
@@ -144,26 +144,62 @@ public class PatientService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+    @Transactional
+public List<Appointment> filterAppointmentsByConditionAndDoctor(String email, String condition, String doctorName) {
+    Optional<Patient> patientOpt = patientRepository.findByEmail(email);
+    if (patientOpt.isEmpty()) return List.of();
 
-    public List<Appointment> filterAppointmentsByConditionAndDoctor(String email, String condition, String doctorName) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'filterAppointmentsByConditionAndDoctor'");
+    Patient patient = patientOpt.get();
+    int status;
+    if (condition.equalsIgnoreCase("future")) {
+        status = 0;
+    } else if (condition.equalsIgnoreCase("past")) {
+        status = 1;
+    } else {
+        throw new IllegalArgumentException("Invalid condition: " + condition);
     }
 
-    public List<Appointment> filterAppointmentsByCondition(String email, String condition) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'filterAppointmentsByCondition'");
+    return appointmentRepository.findByDoctor_NameAndPatient_IdAndStatus(doctorName, patient.getId(), status);
+}
+
+@Transactional
+public List<Appointment> filterAppointmentsByCondition(String email, String condition) {
+    Optional<Patient> patientOpt = patientRepository.findByEmail(email);
+    if (patientOpt.isEmpty()) return List.of();
+
+    Patient patient = patientOpt.get();
+    int status;
+    if (condition.equalsIgnoreCase("future")) {
+        status = 0;
+    } else if (condition.equalsIgnoreCase("past")) {
+        status = 1;
+    } else {
+        throw new IllegalArgumentException("Invalid condition: " + condition);
     }
 
-    public List<Appointment> filterAppointmentsByDoctor(String email, String doctorName) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'filterAppointmentsByDoctor'");
-    }
+    return appointmentRepository.findByPatient_IdAndStatusOrderByAppointmentTimeAsc(patient.getId(), status);
+}
 
-    public List<Appointment> getAllAppointments(String email) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAllAppointments'");
-    }
+@Transactional
+public List<Appointment> filterAppointmentsByDoctor(String email, String doctorName) {
+    Optional<Patient> patientOpt = patientRepository.findByEmail(email);
+    if (patientOpt.isEmpty()) return List.of();
+
+    Patient patient = patientOpt.get();
+    return appointmentRepository.findByDoctor_NameAndPatient_Id(doctorName, patient.getId());
+}
+
+@Transactional
+public List<Appointment> getAllAppointments(String email) {
+    Optional<Patient> patientOpt = patientRepository.findByEmail(email);
+    if (patientOpt.isEmpty()) return List.of();
+
+    Patient patient = patientOpt.get();
+    return appointmentRepository.findByPatient_Id(patient.getId());
+}
+
+
+
     
 // 1. **Add @Service Annotation**:
 //    - The `@Service` annotation is used to mark this class as a Spring service component. 

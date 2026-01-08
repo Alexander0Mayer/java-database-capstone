@@ -1,9 +1,12 @@
 package com.project.back_end.repo;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,22 +14,31 @@ import com.project.back_end.models.Appointment;
 
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long>  {
-   List<Appointment> findByDoctorIdAndAppointmentTimeBetween(Long doctorId, java.time.LocalDateTime start, java.time.LocalDateTime end);
-   List<Appointment> findByDoctorIdAndPatient_NameContainingIgnoreCaseAndAppointmentTimeBetween(Long doctorId, String patientName, java.time.LocalDateTime start, java.time.LocalDateTime end);
-   List<Appointment> findByDoctorIdAndDate(Long doctorId, java.time.LocalDate date);
+   List<Appointment> findByDoctor_IdAndAppointmentTimeBetween(Long doctorId, java.time.LocalDateTime start, java.time.LocalDateTime end);
+   List<Appointment> findByDoctor_IdAndPatient_NameContainingIgnoreCaseAndAppointmentTimeBetween(Long doctorId, String patientName, LocalDateTime start, LocalDateTime end);
+
 
 
    @Modifying
    @Transactional
-   void deleteAllByDoctorId(Long doctorId);
-   List<Appointment> findByPatientId(long patientId);
+   void deleteAllByDoctor_Id(Long doctorId);
+   List<Appointment> findByPatient_Id(long patientId);
    List<Appointment> findByPatient_IdAndStatusOrderByAppointmentTimeAsc(Long patientId, int status);
-   List<Appointment> filterByDoctorNameAndPatientId(String doctorName, Long patientId);
-   List<Appointment> filterByDoctorNameAndPatientIdAndStatus(String doctorName, Long patientId, int status);
-   @Modifying
-   @Transactional
-   void updateStatus(int status, long id);
+   List<Appointment> findByDoctor_NameAndPatient_Id(String doctorName, Long patientId);
+   List<Appointment> findByDoctor_NameAndPatient_IdAndStatus(String doctorName, Long patientId, int status);
 
+   @Modifying
+   @Query("UPDATE Appointment a SET a.status = :status WHERE a.id = :id")
+   void updateStatus(@Param("status") int status, @Param("id") long id);
+
+   @Query("SELECT a FROM Appointment a " +
+       "WHERE a.doctor.id = :doctorId " +
+       "AND a.appointmentTime BETWEEN :startOfDay AND :endOfDay")
+List<Appointment> findByDoctorIdAndDate(
+        @Param("doctorId") Long doctorId,
+        @Param("startOfDay") LocalDateTime startOfDay,
+        @Param("endOfDay") LocalDateTime endOfDay
+);
 
 
    // 1. Extend JpaRepository:

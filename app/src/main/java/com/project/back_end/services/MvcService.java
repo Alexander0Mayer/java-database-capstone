@@ -123,7 +123,7 @@ public class MvcService {
     }
     public boolean validatePatient(String email, String phoneNumber) {
         Optional<Patient> patientByEmail = patientRepository.findByEmail(email);
-        Optional<Patient> patientByPhone = patientRepository.findByPhoneNumber(phoneNumber);
+        Optional<Patient> patientByPhone = patientRepository.findByPhone(phoneNumber);
         return patientByEmail.isEmpty() && patientByPhone.isEmpty();
     }
     public ResponseEntity<?> validatePatientLogin(String email, String password) {
@@ -172,7 +172,7 @@ public class MvcService {
     public boolean isDoctorAvailable(Long doctorId, LocalDateTime startTime, LocalDateTime endTime, long excludeAppointmentId) {
     // Suche nach Terminen des Arztes im gewünschten Zeitfenster, außer dem aktuellen Termin
     List<Appointment> conflictingAppointments = appointmentRepository
-        .findByDoctorIdAndAppointmentTimeBetween(doctorId, startTime, endTime)
+        .findByDoctor_IdAndAppointmentTimeBetween(doctorId, startTime, endTime)
         .stream()
         .filter(appointment -> appointment.getId() != excludeAppointmentId)
         .collect(Collectors.toList());

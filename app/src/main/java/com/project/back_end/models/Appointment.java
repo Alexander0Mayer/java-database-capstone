@@ -62,6 +62,8 @@ public class Appointment {
 //        - 0 means the appointment is scheduled.
 //        - 1 means the appointment has been completed.
 //      - The @NotNull annotation ensures that the status field is not null.
+  
+
   @NotNull
   private int status; // 0: scheduled, 1: completed
 // 6. 'getEndTime' method:

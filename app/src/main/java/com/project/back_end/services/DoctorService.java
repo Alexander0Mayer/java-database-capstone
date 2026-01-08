@@ -25,19 +25,22 @@ public class DoctorService {
     private final AppointmentRepository appointmentRepository;
     private final TokenService tokenService;
     private final PasswordEncoder passwordEncoder;
+    private final AppointmentService appointmentService;
 
     public DoctorService(DoctorRepository doctorRepository,
                          AppointmentRepository appointmentRepository,
                          TokenService tokenService,
-                         PasswordEncoder passwordEncoder) {
+                         PasswordEncoder passwordEncoder, 
+                         AppointmentService appointmentService) {
         this.doctorRepository = doctorRepository;
         this.appointmentRepository = appointmentRepository;
         this.tokenService = tokenService;
         this.passwordEncoder = passwordEncoder;
+        this.appointmentService = appointmentService;
     }
     @Transactional
     public List<String> getDoctorAvailability(Long doctorId, LocalDate date) {
-        List<Appointment> appointments = appointmentRepository.findByDoctorIdAndDate(doctorId, date);
+        List<Appointment> appointments = appointmentService.getAppointmentsByDoctorAndDate(doctorId, date);
         java.util.Set<LocalTime> bookedSlots = appointments.stream()
                 .map(appointment -> appointment.getAppointmentTime().toLocalTime())
                 .collect(Collectors.toSet());
@@ -86,7 +89,7 @@ public class DoctorService {
             if (!doctorRepository.findById(doctorId).isPresent()) {
                 return -1; // Doctor not found
             }
-            appointmentRepository.deleteAllByDoctorId(doctorId);
+            appointmentRepository.deleteAllByDoctor_Id(doctorId);
             doctorRepository.deleteById(doctorId);
             return 1; // Success
         } catch (Exception e) {

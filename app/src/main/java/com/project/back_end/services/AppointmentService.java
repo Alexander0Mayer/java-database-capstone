@@ -101,9 +101,9 @@ public class AppointmentService {
                 throw new IllegalArgumentException("Doctor ID and date must not be null");
             }
         if (patientName == null || patientName.isEmpty()) {
-            appointments = appointmentRepository.findByDoctorIdAndAppointmentTimeBetween(doctorId, startOfDay, endOfDay);
+            appointments = appointmentRepository.findByDoctor_IdAndAppointmentTimeBetween(doctorId, startOfDay, endOfDay);
         } else {
-            appointments = appointmentRepository.findByDoctorIdAndPatient_NameContainingIgnoreCaseAndAppointmentTimeBetween(doctorId, patientName, startOfDay, endOfDay);
+            appointments = appointmentRepository.findByDoctor_IdAndPatient_NameContainingIgnoreCaseAndAppointmentTimeBetween(doctorId, patientName, startOfDay, endOfDay);
         }
         return appointments.stream().map(appointment -> {
             Patient patient = patientRepository.findById(appointment.getPatientId()).orElse(null);
@@ -129,6 +129,14 @@ public class AppointmentService {
 
     public Optional<Appointment> getAppointmentById(Long appointmentId) {
         return appointmentRepository.findById(appointmentId);
+    }
+
+
+    public List<Appointment> getAppointmentsByDoctorAndDate(Long doctorId, LocalDate date) {
+        LocalDateTime startOfDay = date.atStartOfDay(); // 00:00
+        LocalDateTime endOfDay = date.atTime(23, 59, 59); // 23:59:59
+
+        return appointmentRepository.findByDoctorIdAndDate(doctorId, startOfDay, endOfDay);
     }
 
 
